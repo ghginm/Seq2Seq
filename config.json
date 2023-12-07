@@ -1,0 +1,29 @@
+{
+    "model_configuration": {
+        "seq_len": 30,
+	"fc_window": 4,
+        "l_rate": 0.001,
+        "dropout_prob_enc": 0.2,
+	"dropout_prob_dec": 0,
+	"weight_decay": 1e-8,
+        "hidden_size_enc": 80,
+	"hidden_size_dec": 32,
+        "n_layer_enc": 2,
+	"n_layer_dec": 1,
+        "batch_size": 1024,
+        "n_epoch_validate": 500,
+	"n_epoch_train": 100,
+	"store_last_param": 30,
+	"samp_freq_param": 2,
+	"training_strategy": "mixed",
+	"teacher_forcing_prob": 0.65
+    },
+    "model_train_val_test": {
+	"validation_mode": false,
+	"val_size": 8,
+	"training_mode": false,
+	"train_n_models": 4,
+	"testing_mode": true,
+	"get_test_results": true
+    }
+}
