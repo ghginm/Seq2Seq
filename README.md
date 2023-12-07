@@ -2,9 +2,9 @@
   <h1>Seq2Seq neural network</h1>
   
   <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="analysis/intro_dark.jpg">
-  <source media="(prefers-color-scheme: light)" srcset="analysis/intro_light.jpg">
-  <img alt="Seq2Seq" src="analysis/intro_dark.jpg" width="500" height="auto">
+  <source media="(prefers-color-scheme: dark)" srcset="analysis/Intro_dark.jpg">
+  <source media="(prefers-color-scheme: light)" srcset="analysis/Intro_light.jpg">
+  <img alt="Seq2Seq" src="analysis/Intro_dark.jpg" width="500" height="auto">
   </picture>
 </div>
 
