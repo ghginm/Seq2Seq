@@ -41,7 +41,7 @@ data = dp.get_data(db_url='mysql+mysqlconnector:...', data_path=f'{path_project}
 data = dp.preprocess_data(data=data, date_col=date_col, id_col=id_col, target_col=target_col, empty_token=0)
 
 if testing_mode:
-    test_start = data['date'].max() - pd.to_timedelta(fc_window - 1, unit='W')
+    test_start = data[date_col].max() - pd.to_timedelta(fc_window - 1, unit='W')
     data_test, data = dp.split_data(data=data, date_col=date_col, test_start=test_start, test_end=None)
 
 ## Variables
@@ -53,10 +53,10 @@ data = dp.ts_var(data=data, id_col=id_col, date_col=date_col, target_col=target_
 ## Script parameters
 
 # Parameters
-input_col = [col for col in data.columns if col not in {'id', 'date'}]  # Columns must have the same order during training and inference
-# list(set(data.columns) - {'id', 'date'})
+input_col = [col for col in data.columns if col not in {id_col, date_col}]  # Columns must have the same order during training and inference
+# list(set(data.columns) - {id_col, date_col})
 
-id_list = list(data['id'].unique())
+id_list = list(data[id_col].unique())
 id_n = len(id_list)
 
 sk_scaler = MinMaxScaler()
@@ -187,7 +187,7 @@ if testing_mode and get_test_results:
         print(f'Model {idx}')
 
         # Loading parameters
-        checkpoint_param = torch.load(f'{path_project}\\model\\{model_param}')
+        checkpoint_param = torch.load(f'{path_project}\\model\\{model_param}', map_location=device)
 
         # Checkpoints
         for idx, param in enumerate(checkpoint_param):
@@ -203,15 +203,15 @@ if testing_mode and get_test_results:
             model.eval()
 
             # Forecasting
-            forecast = mc.forecast(model=model, device=device, data_pred=data_pred)
+            fc = mc.forecast(model=model, device=device, data_pred=data_pred)
 
             # Scaling data back
-            dummy_matrix = np.zeros((forecast.shape[0], len(input_col) - 1), dtype=np.float32)
-            forecast_rescaled = np.column_stack((forecast, dummy_matrix))
-            forecast_rescaled = data_transform.scaler.inverse_transform(forecast_rescaled)[:, 0]
-            forecast_rescaled[forecast_rescaled < 0] = 0
+            dummy_matrix = np.zeros((fc.shape[0], len(input_col) - 1), dtype=np.float32)
+            fc_rescaled = np.column_stack((fc, dummy_matrix))
+            fc_rescaled = data_transform.scaler.inverse_transform(fc_rescaled)[:, 0]
+            fc_rescaled[fc_rescaled < 0] = 0
 
-            fc_avg.append(forecast_rescaled)
+            fc_avg.append(fc_rescaled)
 
     fc_avg = np.average(fc_avg, axis=0)
 
@@ -222,4 +222,4 @@ if testing_mode and get_test_results:
     fc['fc_avg'] = fc_avg
     data_test_pred = data_test.merge(fc, how='left', on=[id_col, date_col])
 
-    metrics = dp.model_evaluation(data=data_test_pred, date_col='date', y_true='target', y_pred_list=['fc_avg'])
+    metrics = dp.model_evaluation(data=data_test_pred, date_col=date_col, y_true=target_col, y_pred_list=['fc_avg'])
