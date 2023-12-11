@@ -29,7 +29,7 @@ fc_window = model_config['fc_window']
 
 data = dp.get_data(db_url='mysql+mysqlconnector:...', data_path=f'{path_project}\\data\\data.parquet', sql_access=False)
 data = dp.preprocess_data(data=data, date_col=date_col, id_col=id_col, target_col=target_col, empty_token=0)
-fc_start = data['date'].max() + pd.to_timedelta(1, unit='W')
+fc_start = data[date_col].max() + pd.to_timedelta(1, unit='W')
 
 ## Variables
 
@@ -40,9 +40,9 @@ data = dp.ts_var(data=data, id_col=id_col, date_col=date_col, target_col=target_
 ## Script parameters
 
 # Parameters
-input_col = [col for col in data.columns if col not in {'id', 'date'}]  # Columns must have the same order during training and inference
+input_col = [col for col in data.columns if col not in {id_col, date_col}]  # Columns must have the same order during training and inference
 
-id_list = list(data['id'].unique())
+id_list = list(data[id_col].unique())
 id_n = len(id_list)
 
 sk_scaler = MinMaxScaler()
@@ -98,7 +98,7 @@ for idx, model_param in enumerate(model_param_all):
     print(f'Model {idx}')
 
     # Loading parameters
-    checkpoint_param = torch.load(f'{path_project}\\model\\{model_param}')
+    checkpoint_param = torch.load(f'{path_project}\\model\\{model_param}',  map_location=device)
 
     # Checkpoints
     for idx, param in enumerate(checkpoint_param):
@@ -114,19 +114,19 @@ for idx, model_param in enumerate(model_param_all):
         model.eval()
 
         # Forecasting
-        forecast = mc.forecast(model=model, device=device, data_pred=data_pred)
+        fc = mc.forecast(model=model, device=device, data_pred=data_pred)
 
         # Scaling data back
-        dummy_matrix = np.zeros((forecast.shape[0], len(input_col) - 1), dtype=np.float32)
-        forecast_rescaled = np.column_stack((forecast, dummy_matrix))
-        forecast_rescaled = data_transform.scaler.inverse_transform(forecast_rescaled)[:, 0]
-        forecast_rescaled[forecast_rescaled < 0] = 0
+        dummy_matrix = np.zeros((fc.shape[0], len(input_col) - 1), dtype=np.float32)
+        fc_rescaled = np.column_stack((fc, dummy_matrix))
+        fc_rescaled = data_transform.scaler.inverse_transform(fc_rescaled)[:, 0]
+        fc_rescaled[fc_rescaled < 0] = 0
 
-        fc_avg.append(forecast_rescaled)
+        fc_avg.append(fc_rescaled)
 
 fc_avg = np.average(fc_avg, axis=0)
 
-# Evaluating model performance
+# Storing forecasts
 date_list = list(pd.date_range(start=fc_start, periods=fc_window, freq='W-MON'))
 id_date_list = [x for x in id_list for _ in range(fc_window)]
 fc = pd.DataFrame([id_date_list, len(id_list) * date_list], index=[id_col, date_col]).T
