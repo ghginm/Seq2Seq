@@ -80,6 +80,8 @@ class DatasetTransform:
             print('The value for `fc_window` must be >= 2.')
             sys.exit(1)
 
+        # TODO: change `seq_len` during inference?
+
         if inference:
             x, y = [], None
 
@@ -296,7 +298,7 @@ class DecoderLSTM(nn.Module):
         if decoder_inner_loop == 0:
             # Reshaping hidden states of the encoder:
             if self.n_layer_enc > 1:
-                # To disrupt the gradient flow between the encoder and the decoder, use .detach() on the hidden state / cell states
+                # To disrupt the gradient flow between the encoder and the decoder, use .detach() on the hidden / cell states
                 if self.hc_multilayer_stack:
                     # Stacking the encoder's hidden states: (n_layer, batch_size, hidden_size) => (1, batch_size, n_layer*hidden_size)
                     hidden_state_enc = hc_state_enc[0].view(1, -1, (self.n_layer_enc * self.hidden_size_enc))  # .detach()
@@ -490,7 +492,7 @@ def train_validate(model, device, dataloader_train, dataloader_val, n_epoch, l_r
                            teacher_forcing_prob=teacher_forcing_prob)
 
             # Loss
-            loss_batch = loss_function(output, y_batch)
+            loss_batch = loss_function(output.to(device), y_batch)
             loss_train_epoch_cumsum += loss_batch.item()
 
             # Backward pass
@@ -539,7 +541,7 @@ def train_validate(model, device, dataloader_train, dataloader_val, n_epoch, l_r
                                    teacher_forcing_prob=teacher_forcing_prob)
 
                     # Loss
-                    loss_batch = loss_function(output, y_batch)
+                    loss_batch = loss_function(output.to(device), y_batch)
                     loss_val_epoch_cumsum += loss_batch.item()
 
             # Average validation loss
@@ -558,6 +560,7 @@ def train_validate(model, device, dataloader_train, dataloader_val, n_epoch, l_r
 
 def forecast(model, device, data_pred):
     """Produces forecasts."""
+    model.to(device)
     forecast = model(data_pred.to(device), torch.empty(0), operational_mode='inference')
     forecast = forecast.detach().cpu().numpy().flatten()
 
