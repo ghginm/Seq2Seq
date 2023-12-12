@@ -301,8 +301,8 @@ class DecoderLSTM(nn.Module):
                 # To disrupt the gradient flow between the encoder and the decoder, use .detach() on the hidden / cell states
                 if self.hc_multilayer_stack:
                     # Stacking the encoder's hidden states: (n_layer, batch_size, hidden_size) => (1, batch_size, n_layer*hidden_size)
-                    hidden_state_enc = hc_state_enc[0].view(1, -1, (self.n_layer_enc * self.hidden_size_enc))  # .detach()
-                    cell_state_enc = hc_state_enc[1].view(1, -1, (self.n_layer_enc * self.hidden_size_enc))  # .detach()
+                    hidden_state_enc = torch.cat([*hc_state_enc[0]], dim=1).unsqueeze(0)  # .detach()
+                    cell_state_enc = torch.cat([*hc_state_enc[1]], dim=1).unsqueeze(0)  # .detach()
                     hc_state_dec = (hidden_state_enc, cell_state_enc)
                 else:
                     # Getting the last hidden state of the encoder: (n_layer, batch_size, hidden_size) => (1, batch_size, hidden_size).
