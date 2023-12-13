@@ -122,15 +122,15 @@ if validation_mode:
 if training_mode:
     print('Training mode: on')
 
+    # Preparing data
+    data_transform = mc.DatasetTransform(data=data, seq_len=seq_len, fc_window=fc_window, id_list=id_list,
+                                         id_n=id_n, id_col=id_col, target_col=target_col, var_cols=input_col)
+
+    loader_tr, _ = data_transform.prepare_data(val_size=val_size, sk_scaler=sk_scaler,
+                                               batch_size=batch_size, operational_mode='training')
+    
     for train_iter in range(train_n_models):
         print(f'Model {train_iter}')
-
-        # Preparing data
-        data_transform = mc.DatasetTransform(data=data, seq_len=seq_len, fc_window=fc_window, id_list=id_list,
-                                             id_n=id_n, id_col=id_col, target_col=target_col, var_cols=input_col)
-
-        loader_tr, _ = data_transform.prepare_data(val_size=val_size, sk_scaler=sk_scaler,
-                                                   batch_size=batch_size, operational_mode='training')
 
         # Initialising a model
         model = mc.EncoderDecoderLSTM(device=device, fc_window_train=fc_window, fc_window_inference=None,
